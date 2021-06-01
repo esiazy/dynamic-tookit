@@ -14,7 +14,7 @@ public class DynamicSqlContext {
 
     public DynamicSqlContext(Map<String, Object> param) {
         this.params = param;
-        sqlBuilder = new StringJoiner(" ");
+        sqlBuilder = new StringJoiner("");
     }
 
 

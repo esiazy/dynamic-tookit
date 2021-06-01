@@ -27,8 +27,6 @@ public class ExecuteContext {
      */
     private DataSource dataSource;
 
-    private boolean isSelect = true;
-
     public SqlSource getSqlSource() {
         return sqlSource;
     }
@@ -51,13 +49,5 @@ public class ExecuteContext {
 
     public void setDataSource(DataSource dataSource) {
         this.dataSource = dataSource;
-    }
-
-    public boolean isSelect() {
-        return isSelect;
-    }
-
-    public void setSelect(boolean select) {
-        isSelect = select;
     }
 }

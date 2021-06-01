@@ -13,14 +13,6 @@ import com.esiazy.dynamic.sql.util.ExecutorContextUtil;
  */
 public interface ContextCache {
     /**
-     * 是否为查询语句
-     *
-     * @param contextId 上下文缓存ID
-     * @return 是否
-     */
-    boolean isSelect(String contextId);
-
-    /**
      * 检查目标是否存在
      * 如不存在则进行查询并更新
      * <p>默认懒加载</p>

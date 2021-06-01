@@ -1,8 +1,7 @@
 package com.esiazy.dynamic.sql.source;
 
-import com.esiazy.dynamic.core.entity.meta.MetaHashMap;
-
 import java.util.List;
+import java.util.Map;
 
 /**
  * @author wxf
@@ -13,9 +12,9 @@ public final class BoundSql {
 
     private final String sql;
 
-    private final MetaHashMap param;
+    private final Map<String, Object> param;
 
-    public BoundSql(List<String> bindsParamName, String sql, MetaHashMap param) {
+    public BoundSql(List<String> bindsParamName, String sql, Map<String, Object> param) {
         this.bindsParamName = bindsParamName;
         this.sql = sql;
         this.param = param;
@@ -29,7 +28,7 @@ public final class BoundSql {
         return sql;
     }
 
-    public MetaHashMap getParam() {
+    public Map<String, Object> getParam() {
         return param;
     }
 }

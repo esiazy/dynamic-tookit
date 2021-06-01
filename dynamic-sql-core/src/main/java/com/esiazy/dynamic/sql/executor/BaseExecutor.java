@@ -1,6 +1,6 @@
 package com.esiazy.dynamic.sql.executor;
 
-import com.esiazy.dynamic.core.entity.meta.MetaHashMap;
+import com.esiazy.dynamic.sql.executor.result.ResultHandler;
 import com.esiazy.dynamic.sql.executor.statment.StatementHandler;
 import com.esiazy.dynamic.sql.source.BoundSql;
 import com.esiazy.dynamic.sql.source.Configuration;
@@ -16,6 +16,7 @@ import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.List;
+import java.util.Map;
 
 /**
  * sql执行器
@@ -26,7 +27,7 @@ import java.util.List;
  */
 @Component
 public class BaseExecutor implements Executor {
-    private final Logger log = LoggerFactory.getLogger(getClass());
+    private static final Logger log = LoggerFactory.getLogger(BaseExecutor.class);
 
     protected Configuration configuration;
 
@@ -36,14 +37,18 @@ public class BaseExecutor implements Executor {
 
     public static void setParam(PreparedStatement statement, BoundSql boundSql) throws SQLException {
         List<String> bindsParamName = boundSql.getBindsParamName();
-        MetaHashMap map = boundSql.getParam();
+        Map<String, Object> map = boundSql.getParam();
+
         for (int i = 0; i < boundSql.getBindsParamName().size(); i++) {
-            statement.setObject(i + 1, map.get(bindsParamName.get(i)));
+            String paramName = bindsParamName.get(i);
+            Object o = map.get(paramName);
+            statement.setObject(i + 1, o);
         }
+
     }
 
     @Override
-    public int update(DataSource dataSource, ExecuteContext contextMap, MetaHashMap parameter) throws SQLException {
+    public int update(DataSource dataSource, ExecuteContext contextMap, Map<String, Object> parameter) throws SQLException {
         Connection connection = null;
         Statement statement = null;
         try {
@@ -59,18 +64,13 @@ public class BaseExecutor implements Executor {
         }
     }
 
-    private BoundSql getBoundSql(ExecuteContext contextMap, MetaHashMap parameter) {
+    private BoundSql getBoundSql(ExecuteContext contextMap, Map<String, Object> parameter) {
         SqlSource source = contextMap.getSqlSource();
         return source.getBoundSql(parameter);
     }
 
     @Override
-    public List<MetaHashMap> query(ExecuteContext contextMap, MetaHashMap parameter) throws SQLException {
-        return this.query(contextMap.getDataSource(), contextMap, parameter);
-    }
-
-    @Override
-    public List<MetaHashMap> query(DataSource dataSource, ExecuteContext context, MetaHashMap parameter) throws SQLException {
+    public <E> List<E> query(DataSource dataSource, ExecuteContext context, Map<String, Object> parameter, ResultHandler resultHandler) throws SQLException {
         Statement statement = null;
         Connection connection = null;
         try {
@@ -79,7 +79,7 @@ public class BaseExecutor implements Executor {
             StatementHandler handler = configuration.newStatementHandler(boundSql);
             statement = handler.prepare(connection);
             setParam((PreparedStatement) statement, boundSql);
-            return handler.query(statement);
+            return handler.query(statement, resultHandler);
         } finally {
             closeStatement(statement);
             DataSourceUtils.releaseConnection(connection, dataSource);

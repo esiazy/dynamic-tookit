@@ -26,6 +26,7 @@ public interface CompileService {
 
     /**
      * 解析参数类型并添加到参数集合
+     * <p>可自定义加载所需类型</p>
      * <p>确保顺序与方法上的参数顺序一致</p>
      *
      * @param parameterTypes 参数类型

@@ -4,10 +4,14 @@ import java.io.Serializable;
 import java.util.Map;
 
 /**
+ * 执行参数
+ *
  * @author wxf
  */
 public class DynamicWrapper implements Serializable {
+
     private static final long serialVersionUID = -6169328101999890723L;
+
     private final Dto dto;
 
     public DynamicWrapper() {
@@ -66,8 +70,14 @@ public class DynamicWrapper implements Serializable {
 
         private Map<String, Object> param;
 
+        /**
+         * 是否为私有方法
+         */
         private boolean isPrivate;
 
+        /**
+         * 自定义参数
+         */
         private Object parameter;
 
         public String getController() {

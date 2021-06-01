@@ -1,6 +1,5 @@
 package com.esiazy.dynamic.sql.executor.statment;
 
-import com.esiazy.dynamic.core.entity.meta.MetaHashMap;
 import com.esiazy.dynamic.sql.exceptions.ExecutorException;
 import com.esiazy.dynamic.sql.executor.result.ResultHandler;
 import com.esiazy.dynamic.sql.source.BoundSql;
@@ -66,11 +65,10 @@ public class PreparedStatementHandler implements StatementHandler {
     }
 
     @Override
-    public List<MetaHashMap> query(Statement statement) throws SQLException {
+    public <E> List<E> query(Statement statement, ResultHandler resultHandler) throws SQLException {
         PreparedStatement preparedStatement = (PreparedStatement) statement;
         preparedStatement.execute();
-        ResultHandler handler = configuration.newResultHandler();
-        return handler.handlerResultSet(statement);
+        return resultHandler.handlerResultSet(statement);
     }
 
 }

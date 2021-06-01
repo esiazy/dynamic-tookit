@@ -1,14 +1,17 @@
 package com.esiazy.dynamic.sql.session;
 
 import com.esiazy.dynamic.core.entity.meta.MetaHashMap;
+import com.esiazy.dynamic.core.type.TypeReference;
 import com.esiazy.dynamic.sql.exceptions.SqlRuntimeException;
 import com.esiazy.dynamic.sql.exceptions.TooManyResultException;
 import com.esiazy.dynamic.sql.executor.ExecuteContext;
 import com.esiazy.dynamic.sql.executor.Executor;
+import com.esiazy.dynamic.sql.executor.result.ResultHandler;
 import com.esiazy.dynamic.sql.source.Configuration;
 
 import java.sql.SQLException;
 import java.util.List;
+import java.util.Map;
 
 /**
  * @author wxf
@@ -26,7 +29,7 @@ public class DefaultMapSqlSession implements MapSqlSession {
     }
 
     @Override
-    public MetaHashMap selectOne(String contextId, MetaHashMap parameter) {
+    public MetaHashMap selectOne(String contextId, Map<String, Object> parameter) {
         List<MetaHashMap> maps = this.selectList(contextId, parameter);
         if (maps.size() == 1) {
             return maps.get(0);
@@ -42,20 +45,29 @@ public class DefaultMapSqlSession implements MapSqlSession {
     }
 
     @Override
-    public List<MetaHashMap> selectList(String contextId, MetaHashMap parameter) {
+    public List<MetaHashMap> selectList(String contextId, Map<String, Object> parameter) {
+        return selectList(contextId, parameter, new TypeReference<MetaHashMap>() {
+        });
+    }
+
+    @Override
+    public <E> List<E> selectList(String contextId, Map<String, Object> parameter, TypeReference<E> typeReference) {
         try {
             ExecuteContext contextMap = configuration.getContext(contextId);
             if (contextMap == null) {
                 throw new RuntimeException("none target sql context to found");
             }
-            return executor.query(contextMap, parameter);
+            ResultHandler resultHandler = configuration.parseResultHandler(typeReference);
+            return executor.query(contextMap.getDataSource(), contextMap, parameter, resultHandler);
         } catch (SQLException throwable) {
             throw new SqlRuntimeException(throwable);
+        } catch (ClassNotFoundException classNotFoundException) {
+            throw new SqlRuntimeException("init result handler error", classNotFoundException);
         }
     }
 
     @Override
-    public int update(String contextId, MetaHashMap parameter) {
+    public int update(String contextId, Map<String, Object> parameter) {
         ExecuteContext contextMap = configuration.getContext(contextId);
         try {
             return executor.update(contextMap, parameter);

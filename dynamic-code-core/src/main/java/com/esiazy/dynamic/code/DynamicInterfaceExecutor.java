@@ -18,10 +18,7 @@ import org.springframework.core.annotation.AnnotationUtils;
 import org.springframework.util.StringUtils;
 
 import java.lang.reflect.Method;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -32,7 +29,7 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 @Slf4j
 public class DynamicInterfaceExecutor {
-    private static final Map<String, DynamicInterfaceCache> OBJECT_MAP = new ConcurrentHashMap<>(64);
+    private static final Map<String, DynamicInterfaceCache> OBJECT_MAP = new HashMap<>(64);
 
     private final CompileService compileService;
 
@@ -62,11 +59,11 @@ public class DynamicInterfaceExecutor {
 
         DynamicInterfaceMethodCache methodCache = processorCache.getMethodCache().get(wrapper.getMethod());
         if (methodCache == null) {
-            throw new NoneMethodException(wrapper.getMethod() + "is not found in object named [" + controller + "]");
+            throw new NoneMethodException(wrapper.getMethod() + " is not found in object named [" + controller + "]");
         }
+
         Method method = methodCache.getMethod();
-        Class<?>[] paramTypes = methodCache.getMethodParamTypes();
-        List<Object> paramList = compileService.parseParameterTypes(wrapper, paramTypes);
+        List<Object> paramList = compileService.parseParameterTypes(wrapper, methodCache.getMethodParamTypes());
 
         if (wrapper.isPrivate()) {
             if (!method.isAccessible()) {
@@ -78,20 +75,17 @@ public class DynamicInterfaceExecutor {
     }
 
     private DynamicInterfaceCache getAndCheckUpdate(String controller) throws CompileFailErrorException {
-        DynamicInterfaceCache interfaceCache = OBJECT_MAP.get(controller);
         DynamicConfigEntity entity = entityConfig.getOne(controller);
+        DynamicInterfaceCache interfaceCache = getWhenNullBuild(entity);
         if (interfaceCache == null || entity.getUpdateTime().getTime() != interfaceCache.getLastUpdateTime().getTime()) {
-            Long time = null;
-            if (interfaceCache != null) {
-                time = interfaceCache.getLastUpdateTime().getTime();
-            }
-            log.info("compare object " + controller + " cache time:" + time + " entity time:" + entity.getUpdateTime().getTime());
-            interfaceCache = buildObject(entity);
+            log.info("cache obj size :{} compare object {}", OBJECT_MAP.size(), controller);
+            interfaceCache = buildObj(entity);
+            OBJECT_MAP.put(controller, interfaceCache);
         }
         return interfaceCache;
     }
 
-    private DynamicInterfaceCache buildObject(DynamicConfigEntity entity) throws CompileFailErrorException {
+    private DynamicInterfaceCache getWhenNullBuild(DynamicConfigEntity entity) throws CompileFailErrorException {
         DynamicInterfaceCache interfaceCache = OBJECT_MAP.get(entity.getController());
         if (interfaceCache == null) {
             synchronized (DynamicInterfaceExecutor.class) {
@@ -99,30 +93,38 @@ public class DynamicInterfaceExecutor {
                 if (interfaceCache != null) {
                     return interfaceCache;
                 }
-                interfaceCache = new DynamicInterfaceCache();
-                Object executeProcess = compileService.getInstance(entity.getCode());
-                //对method做缓存
-                List<Method> declaredMethods = new ArrayList<>();
-                Class<?> aclazz = executeProcess.getClass();
-                while (aclazz != null) {
-                    Method[] declaredMethodsChild = aclazz.getDeclaredMethods();
-                    Collections.addAll(declaredMethods, declaredMethodsChild);
-                    aclazz = aclazz.getSuperclass();
-                }
-                Map<String, DynamicInterfaceMethodCache> methodCacheMap = new ConcurrentHashMap<>(16);
-                for (Method m : declaredMethods) {
-                    DgMethod dgMethod = AnnotationUtils.getAnnotation(m, DgMethod.class);
-                    if (dgMethod != null && !StringUtils.isEmpty(dgMethod.value())) {
-                        methodCacheMap.put(dgMethod.value(), new DynamicInterfaceMethodCache(m, m.getParameterTypes()));
-                        methodCacheMap.put(m.getName(), new DynamicInterfaceMethodCache(m, m.getParameterTypes()));
-                    }
-                }
-                interfaceCache.setMethodCache(methodCacheMap);
-                interfaceCache.setLastUpdateTime(entity.getUpdateTime());
-                interfaceCache.setTarget(executeProcess);
+                interfaceCache = buildObj(entity);
             }
         }
         OBJECT_MAP.put(entity.getController(), interfaceCache);
+        return interfaceCache;
+    }
+
+    private synchronized DynamicInterfaceCache buildObj(DynamicConfigEntity entity) throws CompileFailErrorException {
+        DynamicInterfaceCache interfaceCache;
+        interfaceCache = new DynamicInterfaceCache();
+        long start = System.currentTimeMillis();
+        Object executeProcess = compileService.getInstance(entity.getCode());
+        log.info("instance object success {} cast time :{}ms", entity.getController(), System.currentTimeMillis() - start);
+        //对method做缓存
+        List<Method> declaredMethods = new ArrayList<>();
+        Class<?> aclazz = executeProcess.getClass();
+        while (aclazz != null) {
+            Method[] declaredMethodsChild = aclazz.getDeclaredMethods();
+            Collections.addAll(declaredMethods, declaredMethodsChild);
+            aclazz = aclazz.getSuperclass();
+        }
+        Map<String, DynamicInterfaceMethodCache> methodCacheMap = new ConcurrentHashMap<>(16);
+        for (Method m : declaredMethods) {
+            DgMethod dgMethod = AnnotationUtils.getAnnotation(m, DgMethod.class);
+            if (dgMethod != null && !StringUtils.isEmpty(dgMethod.value())) {
+                methodCacheMap.put(dgMethod.value(), new DynamicInterfaceMethodCache(m, m.getParameterTypes()));
+                methodCacheMap.put(m.getName(), new DynamicInterfaceMethodCache(m, m.getParameterTypes()));
+            }
+        }
+        interfaceCache.setMethodCache(methodCacheMap);
+        interfaceCache.setLastUpdateTime(entity.getUpdateTime());
+        interfaceCache.setTarget(executeProcess);
         return interfaceCache;
     }
 }

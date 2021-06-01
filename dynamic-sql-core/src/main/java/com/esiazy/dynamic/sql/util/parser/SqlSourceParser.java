@@ -1,11 +1,11 @@
 package com.esiazy.dynamic.sql.util.parser;
 
-import com.esiazy.dynamic.core.entity.meta.MetaHashMap;
 import com.esiazy.dynamic.sql.source.SqlSource;
 import com.esiazy.dynamic.sql.source.sqlsource.StaticSqlSource;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 /**
  * sql符号解析
@@ -15,7 +15,7 @@ import java.util.List;
  */
 public final class SqlSourceParser {
 
-    public SqlSource parseSharp(String originalSql, MetaHashMap params) {
+    public SqlSource parseSharp(String originalSql, Map<String, Object> params) {
         ParameterMappingTokenHandler handler = new ParameterMappingTokenHandler(params);
         GenericTokenParser parser = new GenericTokenParser("#{", "}", handler);
         String sql = parser.parse(originalSql);
@@ -26,10 +26,10 @@ public final class SqlSourceParser {
     private static class ParameterMappingTokenHandler implements TokenHandler {
         private final List<String> bindParamNames = new ArrayList<>();
 
-        private final MetaHashMap parameters;
+        private final Map<String, Object> parameters;
 
-        public ParameterMappingTokenHandler(MetaHashMap parameters) {
-            this.parameters = parameters;
+        public ParameterMappingTokenHandler(Map<String, Object> params) {
+            this.parameters = params;
         }
 
         public List<String> getBindParamNames() {

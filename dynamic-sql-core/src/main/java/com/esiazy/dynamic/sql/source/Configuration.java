@@ -1,10 +1,13 @@
 package com.esiazy.dynamic.sql.source;
 
+import com.esiazy.dynamic.core.entity.meta.MetaHashMap;
+import com.esiazy.dynamic.core.type.TypeReference;
 import com.esiazy.dynamic.sql.cache.ContextCache;
 import com.esiazy.dynamic.sql.cache.DynamicCacheConfig;
 import com.esiazy.dynamic.sql.executor.BaseExecutor;
 import com.esiazy.dynamic.sql.executor.ExecuteContext;
 import com.esiazy.dynamic.sql.executor.Executor;
+import com.esiazy.dynamic.sql.executor.result.ClassResultHandler;
 import com.esiazy.dynamic.sql.executor.result.MetaMapResultHandler;
 import com.esiazy.dynamic.sql.executor.result.ResultHandler;
 import com.esiazy.dynamic.sql.executor.statment.PreparedStatementHandler;
@@ -33,6 +36,12 @@ public class Configuration {
      */
     private final Map<String, ExecuteContext> contextCache;
 
+    /**
+     * sql时间格式
+     * <p>默认为yyyy-MM-dd HH:mm:ss</p>
+     */
+    private String timeFormat = "yyyy-MM-dd HH:mm:ss";
+
     public Configuration(DataSource dataSource) {
         this.dataSource = dataSource;
         this.contextCache = new ConcurrentHashMap<>(32);
@@ -54,6 +63,14 @@ public class Configuration {
         return dataSource;
     }
 
+    public String getTimeFormat() {
+        return timeFormat;
+    }
+
+    public void setTimeFormat(String timeFormat) {
+        this.timeFormat = timeFormat;
+    }
+
     public void addInterceptor(Interceptor interceptor) {
         interceptorChain.addInterceptor(interceptor);
     }
@@ -71,7 +88,7 @@ public class Configuration {
     }
 
     public ResultHandler newResultHandler() {
-        ResultHandler statementHandler = new MetaMapResultHandler();
+        ResultHandler statementHandler = new MetaMapResultHandler(timeFormat);
         statementHandler = (ResultHandler) interceptorChain.pluginAll(statementHandler);
         return statementHandler;
     }
@@ -84,5 +101,14 @@ public class Configuration {
 
     public ContextCache newCacheConfig(DynamicCacheConfig.Query query) {
         return new DynamicCacheConfig(this, query);
+    }
+
+    public <E> ResultHandler parseResultHandler(TypeReference<E> typeReference) throws ClassNotFoundException {
+        Class<?> clazz = typeReference.getClazz();
+        if (clazz == MetaHashMap.class || clazz.isAssignableFrom(Map.class)) {
+            return new MetaMapResultHandler(timeFormat);
+        } else {
+            return new ClassResultHandler(typeReference);
+        }
     }
 }

@@ -19,16 +19,10 @@ public class DynamicCacheConfig extends AbstractContextCacheConfig {
 
     private final XmlLanguageDrive drive;
 
-
     public DynamicCacheConfig(Configuration configuration, Query query) {
         super(configuration);
         this.query = query;
         this.drive = new XmlLanguageDrive();
-    }
-
-    @Override
-    public boolean isSelect(String contextId) {
-        return false;
     }
 
     @Override
@@ -53,6 +47,12 @@ public class DynamicCacheConfig extends AbstractContextCacheConfig {
     }
 
     public interface Query {
+        /**
+         * 查询entity
+         *
+         * @param contextId contextID
+         * @return 实体类结果
+         */
         QueryEntity selectOne(String contextId);
     }
 

@@ -23,22 +23,22 @@ public abstract class AbstractGroovyCompile implements CompileService {
     public Object getInstance(String code) throws CompileFailErrorException {
         try {
             code = preHandler(code);
+            long start = System.currentTimeMillis();
             Class<?> aClass = groovyClassLoader.parseClass(code);
-            Object o = initObject(aClass);
-            log.info("GroovyCompile 编译成功 object:{}", o);
-            return o;
+            log.info("parseClass success cast time :{}ms", System.currentTimeMillis() - start);
+            return initObject(aClass);
         } catch (Throwable throwable) {
             throw new CompileFailErrorException("compile object error : e", throwable);
         }
     }
 
     /**
-     * initObject
+     * 生成并织入参数
      *
-     * @param clazz clazz
-     * @return Object
-     * @throws IllegalAccessException ill
-     * @throws InstantiationException instance
+     * @param clazz clazz模板
+     * @return Object 对象
+     * @throws IllegalAccessException IllegalAccessException
+     * @throws InstantiationException InstantiationException
      */
     protected abstract Object initObject(Class<?> clazz) throws InstantiationException, IllegalAccessException;
 

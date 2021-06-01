@@ -6,6 +6,8 @@ import com.esiazy.dynamic.sql.source.BoundSql;
 import com.esiazy.dynamic.sql.source.SqlSource;
 import com.esiazy.dynamic.sql.util.parser.SqlSourceParser;
 
+import java.util.Map;
+
 /**
  * @author wxf
  * @date 2021/5/28 8:37
@@ -26,7 +28,7 @@ public final class RawSqlSource implements SqlSource {
     }
 
     @Override
-    public BoundSql getBoundSql(MetaHashMap param) {
+    public BoundSql getBoundSql(Map<String, Object> param) {
         return sqlSource.getBoundSql(param);
     }
 }

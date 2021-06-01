@@ -1,6 +1,9 @@
 package com.esiazy.dynamic.code.compile;
 
 /**
+ * 默认groovy编译器
+ * <p>仅新建实例</p>
+ *
  * @author wxf
  * @date 2021/5/29 14:35
  */

@@ -17,7 +17,7 @@ public class DynamicInvoker implements Invoker {
         try {
             return method.invoke(obj, args);
         } catch (Throwable throwable) {
-            throw new ExecutorException("executor method named [" + method.getName() + "] error : e ", throwable);
+            throw new ExecutorException("executor method named [" + method.getName() + "] error", throwable);
         }
     }
 
